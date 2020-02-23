@@ -7,7 +7,7 @@ dependencies:
   - _libgcc_mutex=0.1=main
   - bedtools=2.29.2=hc088bd4_0
   - bzip2=1.0.8=h7b6447c_0
-  - ca-certificates=2019.11.28=hecc5488_0
+  - ca-certificates=2020.1.1=0
   - certifi=2019.11.28=py37_0
   - curl=7.68.0=hbc83047_0
   - future=0.18.2=py37_0
@@ -26,11 +26,14 @@ dependencies:
   - libgfortran-ng=7.3.0=hdf63c60_5
   - liblapack=3.8.0=14_openblas
   - libopenblas=0.3.7=h5ec1e0e_6
+  - libpng=1.6.37=hbc83047_0
   - libssh2=1.8.2=h1ba5d50_0
   - libstdcxx-ng=9.1.0=hdf63c60_0
+  - libuuid=1.0.3=h1bed415_2
   - minimap2=2.17=h8b12597_1
+  - mysql-connector-c=6.1.6=2
   - ncurses=6.1=he6710b0_1
-  - openssl=1.1.1d=h516909a_0
+  - openssl=1.1.1d=h7b6447c_4
   - pandas=1.0.1=py37hb3f55d8_0
   - pip=20.0.2=py37_1
   - pybedtools=0.8.1=py37he513fc3_0
@@ -43,6 +46,7 @@ dependencies:
   - six=1.14.0=py37_0
   - sqlite=3.31.1=h7b6447c_0
   - tk=8.6.8=hbc83047_0
+  - ucsc-liftover=357=1
   - wheel=0.34.2=py37_0
   - xz=5.2.4=h14c3975_4
   - zlib=1.2.11=h7b6447c_3
