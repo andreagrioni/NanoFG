@@ -17,7 +17,7 @@ exit
 
 POSITIONAL=()
 NANOFG_DIR=$(realpath $(dirname $(dirname ${BASH_SOURCE[0]})))
-source ${NANOFG_DIR}/paths.ini
+source ${NANOFG_DIR}/paths.config
 # DEFAULT SETTINGS
 THREADS=1
 WTDBG2_DIR=${PATH_WTDBG2_DIR}

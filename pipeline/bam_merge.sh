@@ -13,7 +13,7 @@ Optional parameters:
 }
 
 NANOFG_DIR=$(realpath $(dirname $(dirname ${BASH_SOURCE[0]})))
-source ${NANOFG_DIR}/paths.ini
+source ${NANOFG_DIR}/paths.config
 
 POSITIONAL=()
 SAMBAMBA=${PATH_SAMTOOLS}

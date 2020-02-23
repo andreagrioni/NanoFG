@@ -18,22 +18,6 @@ Optional parameters:
 exit
 }
 
-POSITIONAL=()
-NANOFG_DIR=$(realpath $(dirname $(dirname ${BASH_SOURCE[0]})))
-source ${NANOFG_DIR}/paths.ini
-# DEFAULT SETTINGS
-THREADS=1
-REF=${PATH_HOMO_SAPIENS_REFGENOME}
-REF_DICT=${PATH_HOMO_SAPIENS_REFDICT}
-LAST_DIR=${PATH_LAST_DIR}
-LASTAL=${LAST_DIR}/src/lastal
-LAST_SPLIT=${LAST_DIR}/src/last-split
-LAST_PARAMS=${LAST_DIR}/last_params
-MAF_CONVERT=${LAST_DIR}/scripts/maf-convert
-LAST_SETTINGS="-Q 0 -p ${LAST_PARAMS}"
-MAF_CONVERT=${LAST_DIR}/scripts/maf-convert
-SAMTOOLS=${PATH_SAMTOOLS}
-
 while [[ $# -gt 0 ]]; do
   KEY="$1"
   case ${KEY} in
@@ -84,25 +68,34 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-set -- "${POSITIONAL[@]}" # Restore postional parameters
+set -- "${POSITIONAL[@]}" # Restore positional parameters
 
 if [ -z ${FASTA} ]; then
   echo "Missing -f|--fasta parameter"
   usage
 fi
 
-LASTAL=${LAST_DIR}/src/lastal
-LAST_SPLIT=${LAST_DIR}/src/last-split
-LAST_PARAMS=${LAST_DIR}/last_params
-MAF_CONVERT=${LAST_DIR}/scripts/maf-convert
+POSITIONAL=()
+NANOFG_DIR=$(realpath $(dirname $(dirname ${BASH_SOURCE[0]})))
+source ${NANOFG_DIR}/paths.config
+# DEFAULT SETTINGS
+THREADS=1
+REF=${PATH_HOMO_SAPIENS_REFGENOME}
+REF_DICT=${PATH_HOMO_SAPIENS_REFDICT}
+LAST_DIR=${PATH_LAST_DIR}
+LAST_PARAMS=${PATH_LAST_PARMS}
 LAST_SETTINGS="-Q 0 -p ${LAST_PARAMS}"
+SAMTOOLS=${PATH_SAMTOOLS}
+LASTAL=${LAST_DIR}/lastal
+LAST_SPLIT=${LAST_DIR}/last-split
+MAF_CONVERT=${PATH_LAST_MAFCONV}
 PREFIX=${FASTA/.fa/}
 
 if [ -z $LAST_SETTINGS_OVERRIDE ];then
   LAST_SETTINGS=$(echo $LAST_SETTINGS | sed -e "s/-p [^ ]\+/-p ${LAST_PARAMS}/")
 fi
 
-LAST_COMMAND="${LASTAL} ${LAST_SETTINGS} ${REF} ${PREFIX}.fa | ${LAST_SPLIT} | ${MAF_CONVERT} -f ${REF_DICT} sam /dev/stdin | ${SAMTOOLS} view /dev/stdin -b | \
+LAST_COMMAND="${LASTAL} ${LAST_SETTINGS} ${REF} ${PREFIX}.fa | ${LAST_SPLIT} | python ${MAF_CONVERT} -f ${REF_DICT} sam /dev/stdin | ${SAMTOOLS} view /dev/stdin -b | \
 ${SAMTOOLS} sort /dev/stdin -o ${PREFIX}.last.sorted.bam"
 SAMTOOLS_INDEX_COMMAND="${SAMTOOLS} index ${PREFIX}.last.sorted.bam"
 

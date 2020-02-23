@@ -11,7 +11,7 @@ virtualenv venv -p python3
 . venv/bin/activate
 pip install -r requirements.txt
 ```
-Adjust all paths in the paths.ini file to installed tools
+Adjust all paths in the paths.config file to installed tools
 
 ## How to run
 

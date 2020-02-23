@@ -22,7 +22,7 @@ Optional parameters:
 POSITIONAL=()
 
 NANOFG_DIR=$(realpath $(dirname $(dirname ${BASH_SOURCE[0]})))
-source ${NANOFG_DIR}/paths.ini
+source ${NANOFG_DIR}/paths.config
 
 PRIMER_DESIGN_DIR=${PATH_PRIMER_DESIGN_DIR}
 # DEFAULTS

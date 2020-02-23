@@ -10,7 +10,6 @@ Optional parameters:
     -t|--threads	           Number of threads [$THREADS]
     -sv|--sv_caller          'NanoSV' or the path to Sniffles [$SV_CALLER]
     -s|--sambamba	           Path to sambamba [$SAMBAMBA]
-    -v|--venv		             Path to virtual env of NanoSV [$VENV]
     -c|--config		           Path to config file [$CONFIG]
     -ss|--sniffles_settings  Settings for sniffles sv calling [$SNIFFLES_SETTINGS]
     -o|--output		           Path to vcf output file [$OUTPUT]
@@ -22,14 +21,14 @@ POSITIONAL=()
 
 # DEFAULTS
 NANOFG_DIR=$(realpath $(dirname $(dirname ${BASH_SOURCE[0]})))
-source ${NANOFG_DIR}/paths.ini
+source ${NANOFG_DIR}/paths.config
 FILES_DIR=$NANOFG_DIR/files
 
 THREADS=1
 SV_CALLER=${PATH_SV_CALLER}
 SAMBAMBA=${PATH_SAMTOOLS}
 OUTPUT='/dev/stdout'
-VENV=$NANOFG_DIR/venv/bin/activate
+#VENV=$NANOFG_DIR/venv/bin/activate
 CONFIG=$FILES_DIR/nanosv_last_config.ini
 SNIFFLES_SETTINGS='-s 2 -n -1 --genotype'
 
@@ -63,11 +62,11 @@ do
     shift # past argument
     shift # past value
     ;;
-    -v|--venv)
-    VENV="$2"
-    shift # past argument
-    shift # past value
-    ;;
+    # -v|--venv)
+    # VENV="$2"
+    # shift # past argument
+    # shift # past value
+    # ;;
     -c|--config)
     CONFIG="$2"
     shift # past argument
@@ -98,7 +97,7 @@ fi
 
 #echo `date`: Running on `uname -n`
 
-. $VENV
+#. $VENV
 
 if [[ $SV_CALLER == *"nanosv"* ]] || [[ $SV_CALLER == *"NanoSV"* ]]; then
   #$SV_CALLER  \
@@ -118,6 +117,6 @@ if [[ $SV_CALLER == *"sniffles"* ]] || [[ $SV_CALLER == *"Sniffles"* ]]; then
   $SNIFFLES_SETTINGS
 fi
 
-deactivate
+#deactivate
 
 #echo `date`: Done
