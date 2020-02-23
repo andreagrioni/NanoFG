@@ -6,7 +6,8 @@
 To date, minor changes to the original NanoFG pipelines:
   - maf-convert.mod.py: utilities from LAST tool, update for python3 compatibility.
   - RegionSelection.py: regions provided as BED file format; reads isolated by pybedtools.
-  - mv paths.ini > paths.config
+  - mv paths.ini > paths.config.
+  - add BED file with breakpoint regions for demo.
 
 ## INSTALL
 
