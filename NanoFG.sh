@@ -56,7 +56,7 @@ MAPPING
     -rg|--refgenome                                                    Reference genome [${REFGENOME}]
     -rd|--refdict                                                      Reference genome .dict file [${REFDICT}]
     -mm2s|--minimap2_settings                                          Minimap2 settings [${MINIMAP2_SETTINGS}]
-    -lms|--last_mapping_settings                                       LAST settings [${LAST_MAPPING_SETTINGS}]
+    -lms|--last_mapping_settings                                       LAST settings [${PATH_LAST_PARMS}]
     -lmt|--last_mapping_threads                                        Number of threads [${LAST_MAPPING_THREADS}]
 
 PRIMER DESIGN
@@ -73,12 +73,12 @@ POSITIONAL=()
 #GENERAL DEFAULTS
 NANOFG_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
 
-source $NANOFG_DIR/paths.ini
+source $NANOFG_DIR/paths.config
 
 PIPELINE_DIR=$NANOFG_DIR/pipeline
 FILES_DIR=$NANOFG_DIR/files
 SCRIPT_DIR=$NANOFG_DIR/scripts
-VENV=${NANOFG_DIR}/venv/bin/activate
+#VENV=${NANOFG_DIR}/venv/bin/activate
 
 THREADS=1
 
@@ -123,7 +123,7 @@ CONSENSUS_CALLING_WTDBG2_SETTINGS='-x ont -g 3g -q'
 #MAPPING DEFAULTS
 MINIMAP2_SETTINGS='-x map-ont -a --MD'
 
-LAST_MAPPING_SETTINGS="-Q 0 -p ${LAST_DIR}/last_params"
+LAST_MAPPING_SETTINGS="-Q 0 -p ${PATH_LAST_PARMS}"
 LAST_MAPPING_THREADS=1
 
 #PRIMER DESIGN DEFAULTS
@@ -222,11 +222,11 @@ do
     DONT_FILTER=true
     shift # past argument
     ;;
-    -e|--venv)
-    VENV="$2"
-    shift # past argument
-    shift # past value
-    ;;
+    # -e|--venv)
+    # VENV="$2"
+    # shift # past argument
+    # shift # past value
+    # ;;
     -sa|--samtools)
     SAMTOOLS="$2"
     shift # past argument
@@ -333,7 +333,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 if [ -z $BAM ] && [ -z $FASTQDIR ]; then
     echo "Missing -f|--fastqdir OR -b|--bam parameter"
     usage
-    exit
+    exit 1
 fi
 
 echo -e "`date` \t Running on `uname -n`"
@@ -367,7 +367,7 @@ INFO_OUTPUT=$OUTPUTDIR/${SAMPLE}_FusionGenesInfo.txt
 PIPELINE_DIR=$NANOFG_DIR/pipeline
 SCRIPT_DIR=$NANOFG_DIR/scripts
 CANDIDATE_DIR=$OUTPUTDIR/candidate_fusions
-PRIMER_DIR=$OUTPUTDIR/primers
+#PRIMER_DIR=$OUTPUTDIR/primers
 
 BAM_MERGE_OUT=$OUTPUTDIR/candidate_fusion_genes.bam
 SV_CALLING_OUT=$OUTPUTDIR/candidate_fusion_genes.vcf
@@ -379,17 +379,16 @@ else
   mkdir -p $CANDIDATE_DIR
 fi
 
-if [ -d "$PRIMER_DIR" ]; then
-  rm $PRIMER_DIR/*
-else
-  mkdir -p $PRIMER_DIR
-fi
+# if [ -d "$PRIMER_DIR" ]; then
+#   rm $PRIMER_DIR/*
+# else
+#   mkdir -p $PRIMER_DIR
+# fi
 
 if [ ! -d $CANDIDATE_DIR ]; then
-    exit
+  echo 'failed while creating candidate fusion gene folder'
+    exit 1
 fi
-
-. $VENV
 
 ################################################## MAPPING OF THE NANOPORE READS USING MINIMAP2 (OPTIONAL)
 if [ ! -z $BAM ];then
@@ -426,7 +425,7 @@ else
 
   if ! [ $? -eq 0 ]; then
     echo "!!! REGION SELECTION NOT CORRECTLY COMPLETED... exiting"
-    exit
+    exit 1
   fi
 
   REGION_SELECTION_SAM_OUTPUT=${REGION_SELECTION_BAM_OUTPUT/.bam/.sam}
@@ -448,13 +447,12 @@ if [ -z $VCF ]; then
     -b $REGION_SELECTION_BAM_OUTPUT \
     -t $THREADS \
     -s $SAMTOOLS \
-    -v $VENV \
     -c $NANOSV_MINIMAP2_CONFIG \
     -ss "$SNIFFLES_SETTINGS" \
     -o $VCF
     if ! [ $? -eq 0 ]; then
       echo "!!! SV CALLING NOT CORRECTLY COMPLETED... exiting"
-      exit
+      exit 1
     fi
 fi
 
@@ -484,7 +482,7 @@ python $FUSION_READ_EXTRACTION_SCRIPT \
 
 if ! [ $? -eq 0 ]; then
   echo "!!! FUSION READ EXTRACTION NOT CORRECTLY COMPLETED... exiting"
-  exit
+  exit 1
 fi
 ################################################## CREATION OF A CONSENSUS SEQUENCE OF THE READS THAT SUPPORT A SV (OPTIONAL, NOT RECOMMENDED IF LOW COVERAGE DATA)
 if [ $CONSENSUS_CALLING = true ];then
@@ -513,10 +511,14 @@ echo -e "`date` \t Mapping candidate fusion genes..."
 
 if [[ $SV_CALLER == *"nanosv"* ]] || [[ $SV_CALLER == *"NanoSV"* ]]; then
   MAPPING_ARGS="-t $LAST_MAPPING_THREADS -r $REFGENOME -rd $REFDICT -l $LAST_DIR -ls '$LAST_MAPPING_SETTINGS' -s $SAMTOOLS"
-  for FA in $CANDIDATE_DIR/*.fa; do
-    echo $FA;
-  done | \
-  xargs -I{} --max-procs $THREADS bash -c "bash $PIPELINE_DIR/last_mapping.sh -f {} $MAPPING_ARGS; exit 1;"
+  # for candidate_fusion in $CANDIDATE_DIR/*.fa; do
+  #   echo $candidate_fusion;
+  # done | \
+  #  xargs -I {} --max-procs $THREADS bash -c "bash $PIPELINE_DIR/last_mapping.sh -f {} $MAPPING_ARGS; exit 1;"
+
+  for candidate_fusion in $CANDIDATE_DIR/*.fa; do
+    bash $PIPELINE_DIR/last_mapping.sh -f $candidate_fusion $MAPPING_ARGS;
+  done
 
 elif [[ $SV_CALLER == *"sniffles"* ]] || [[ $SV_CALLER == *"Sniffles"* ]]; then
   MAPPING_ARGS="-mm2 $MINIMAP2 -oc -mm2s '$MINIMAP2_SETTINGS' -r $REFFASTA -t $LAST_MAPPING_THREADS -s $SAMTOOLS"
@@ -559,7 +561,6 @@ bash $PIPELINE_DIR/sv_calling.sh \
   -b $BAM_MERGE_OUT \
   -t $THREADS \
   -s $SAMTOOLS \
-  -v $VENV \
   -c $NANOSV_LAST_CONFIG \
   -ss "$SNIFFLES_SETTINGS" \
   -o $SV_CALLING_OUT
@@ -610,63 +611,63 @@ python $FUSION_CHECK_SCRIPT \
 
 if ! [ $? -eq 0 ]; then
   echo "!!! FUSION CHECK NOT CORRECTLY COMPLETED... exiting"
-  exit
+  exit 1
 fi
 
 ################################################### DESIGNING PRIMERS FOR THE DETECTED FUSIONS
-echo -e "`date` \t Designing primers around fusion breakpoints..."
+echo -e "`date` \t skip Designing primers around fusion breakpoints..."
 
-python $PRIMER_DESIGN_GETSEQ_SCRIPT \
- -v $FUSION_CHECK_VCF_OUTPUT \
- -d $PRIMER_DIR \
- -f $PRIMER_DESIGN_FLANK
+# python $PRIMER_DESIGN_GETSEQ_SCRIPT \
+#  -v $FUSION_CHECK_VCF_OUTPUT \
+#  -d $PRIMER_DIR \
+#  -f $PRIMER_DESIGN_FLANK
 
-if ! [ $? -eq 0 ]; then
- echo "!!! PRIMER FLANK DESIGN NOT CORRECTLY COMPLETED... exiting"
- exit
-fi
+# if ! [ $? -eq 0 ]; then
+#  echo "!!! PRIMER FLANK DESIGN NOT CORRECTLY COMPLETED... exiting"
+#  exit
+# fi
 
-mkdir -p $PRIMER_DIR/tmp
-if [ ! -d $PRIMER_DIR/tmp ]; then
- exit
-fi
+# mkdir -p $PRIMER_DIR/tmp
+# if [ ! -d $PRIMER_DIR/tmp ]; then
+#  exit
+# fi
 
-if [ -d $PRIMER_DESIGN_DIR ];then
-  cd $PRIMER_DIR/tmp
-  for FUSION_FASTA in $PRIMER_DIR/*.fasta; do
-    if [ -z $PRIMER_DESIGN_TILLING_PARAMS ]; then
-      bash $PIPELINE_DIR/primer_design.sh \
-       -f $FUSION_FASTA \
-       -o ${FUSION_FASTA/.fasta/.primers} \
-       -pdb $PRIMER_DESIGN_BINDIR \
-       -pdpt $PRIMER_DESIGN_PCR_TYPE \
-       -psr $PRIMER_DESIGN_PSR \
-       -pdgp $PRIMER_DESIGN_GUIX_PROFILE \
-       -pdpc $PRIMER_DESIGN_PRIMER3_CORE \
-       -pdm $PRIMER_DESIGN_MISPRIMING
-    else
-      bash $PIPELINE_DIR/primer_design.sh \
-       -f $FUSION_FASTA \
-       -o ${FUSION_FASTA/.fasta/.primers} \
-       -pdb $PRIMER_DESIGN_BINDIR \
-       -pdpt $PRIMER_DESIGN_PCR_TYPE \
-       -pdtp $PRIMER_DESIGN_TILLING_PARAMS \
-       -psr $PRIMER_DESIGN_PSR \
-       -pdgp $PRIMER_DESIGN_GUIX_PROFILE \
-       -pdpc $PRIMER_DESIGN_PRIMER3_CORE \
-       -pdm $PRIMER_DESIGN_MISPRIMING
-    fi
+# if [ -d $PRIMER_DESIGN_DIR ];then
+#   cd $PRIMER_DIR/tmp
+#   for FUSION_FASTA in $PRIMER_DIR/*.fasta; do
+#     if [ -z $PRIMER_DESIGN_TILLING_PARAMS ]; then
+#       bash $PIPELINE_DIR/primer_design.sh \
+#        -f $FUSION_FASTA \
+#        -o ${FUSION_FASTA/.fasta/.primers} \
+#        -pdb $PRIMER_DESIGN_BINDIR \
+#        -pdpt $PRIMER_DESIGN_PCR_TYPE \
+#        -psr $PRIMER_DESIGN_PSR \
+#        -pdgp $PRIMER_DESIGN_GUIX_PROFILE \
+#        -pdpc $PRIMER_DESIGN_PRIMER3_CORE \
+#        -pdm $PRIMER_DESIGN_MISPRIMING
+#     else
+#       bash $PIPELINE_DIR/primer_design.sh \
+#        -f $FUSION_FASTA \
+#        -o ${FUSION_FASTA/.fasta/.primers} \
+#        -pdb $PRIMER_DESIGN_BINDIR \
+#        -pdpt $PRIMER_DESIGN_PCR_TYPE \
+#        -pdtp $PRIMER_DESIGN_TILLING_PARAMS \
+#        -psr $PRIMER_DESIGN_PSR \
+#        -pdgp $PRIMER_DESIGN_GUIX_PROFILE \
+#        -pdpc $PRIMER_DESIGN_PRIMER3_CORE \
+#        -pdm $PRIMER_DESIGN_MISPRIMING
+#     fi
 
-    mv $PRIMER_DIR/tmp/primer3.out ${FUSION_FASTA/.fasta/_primerinfo.txt}
-    rm $PRIMER_DIR/tmp/*
-  done
-  rmdir $PRIMER_DIR/tmp/
-  cat $PRIMER_DIR/*.primers > $OUTPUTDIR/${SAMPLE}_FusionGenes.primers
-  cd $OUTPUTDIR
-else
-  echo "Path to primer3 does not exist. Giving only breakpoint sequences"
-  cat $PRIMER_DIR/*.fasta > $OUTPUTDIR/${SAMPLE}_FusionGenesBNDseq.fasta
-fi
+#     mv $PRIMER_DIR/tmp/primer3.out ${FUSION_FASTA/.fasta/_primerinfo.txt}
+#     rm $PRIMER_DIR/tmp/*
+#   done
+#   rmdir $PRIMER_DIR/tmp/
+#   cat $PRIMER_DIR/*.primers > $OUTPUTDIR/${SAMPLE}_FusionGenes.primers
+#   cd $OUTPUTDIR
+# else
+#   echo "Path to primer3 does not exist. Giving only breakpoint sequences"
+#   cat $PRIMER_DIR/*.fasta > $OUTPUTDIR/${SAMPLE}_FusionGenesBNDseq.fasta
+# fi
 
 ################################################### IF -DC IS NOT SPECIFIED, ALL FILES EXCEPT THE OUTPUT FILES ARE DELETED TO PROVIDE A CLEAN OUTPUT
 
@@ -678,9 +679,9 @@ if [ $DONT_CLEAN = false ];then
   rm $BAM_MERGE_OUT.bai
   rm $SV_CALLING_OUT
   rm $SV_CALLING_OUT_FILTERED
-  rm $PRIMER_DIR/*
-  rmdir $PRIMER_DIR
+#  rm $PRIMER_DIR/*
+#  rmdir $PRIMER_DIR
 fi
 
-deactivate
+#deactivate
 echo -e "`date` \t Done"
