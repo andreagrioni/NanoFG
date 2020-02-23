@@ -78,9 +78,9 @@ WTDBG2_COMMAND="${WTDBG2} ${WTDBG2_SETTINGS} -i ${FASTA} -t ${THREADS} -fo ${PRE
 WTPOA_CNS_COMMAND="${WTPOA_CNS} -t ${THREADS} -i ${PREFIX}.ctg.lay.gz -fo ${PREFIX}.ctg.fa"
 SED_COMMAND="sed -i \"s/>ctg/>${SVID}_ctg/g\" ${PREFIX}.ctg.fa"
 
-#echo ${WTDBG2_COMMAND}
+echo ${WTDBG2_COMMAND}
 eval ${WTDBG2_COMMAND}
-#echo ${WTPOA_CNS_COMMAND}
+echo ${WTPOA_CNS_COMMAND}
 eval ${WTPOA_CNS_COMMAND}
 #echo ${SED_COMMAND}
 eval ${SED_COMMAND}
