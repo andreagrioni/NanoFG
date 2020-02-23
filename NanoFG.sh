@@ -2,9 +2,9 @@
 
 usage() {
 echo "
-bash NanoFG.sh -f </path/to/fastq> [-s SELECTED_GENES_OR_REGIONS] [-cc] [-df] [-dc]
+bash NanoFG.sh -f </path/to/fastq> [-r BED REGION FILE] [-cc] [-df] [-dc]
 OR
-bash NanoFG.sh -b </path/to/bam> [-v </path/to/vcf>] [-s SELECTED_GENES_OR_REGIONS] [-cc] [-df] [-dc]
+bash NanoFG.sh -b </path/to/bam> [-v </path/to/vcf>] [-r BED REGION FILE] [-cc] [-df] [-dc]
 
 
 Required parameters:
@@ -21,10 +21,8 @@ GENERAL
     -t|--threads                                                       Number of threads
     -e|--venv                                                          Path to virtual environment[${VENV}]
 
-SELECTION AND FILTERING
-    -s|--selection                                                     Select genes or areas to check for fusion genes.
-                                                                       Insert a list of genes or areas, separated by a comma
-                                                             e.g. 'BRAF,TP53' or 'ENSG00000157764,ENSG00000141510' or '17:7565097-7590856'
+REGIONS AND FILTERING
+    -r|--regions                                                      BED file of target regions.
     -dc|--dont_clean                                                   Don't clean up the intermediate files
     -df|--dont_filter                                                  Don't filter out all non-PASS SVs
     -cc|--consensus_calling                                            Create a consensus sequence of the fusion-supporting reads. Not recommended on low-coverage data.
@@ -110,7 +108,6 @@ SNIFFLES_SETTINGS='-s 2 -n -1 -d 10 --genotype'
 
 #REGION SELECTION DEFAULTS
 REGION_SELECTION_SCRIPT=$SCRIPT_DIR/RegionSelection.py
-REGION_SELECTION_BED_OUTPUT=$OUTPUTDIR/regions.bed
 REGION_SELECTION_BAM_OUTPUT=$OUTPUTDIR/regions.bam
 
 #FUSION READ EXTRACTION DEFAULTS
@@ -174,8 +171,8 @@ do
     shift # past argument
     shift # past value
     ;;
-    -s|--selection)
-    SELECTION="$2"
+    -r|--regions)
+    REGIONS="$2"
     shift # past argument
     shift # past value
     ;;
@@ -410,32 +407,27 @@ else
     -s $SAMTOOLS
 fi
 
-################################################## SELECTION OF REGIONS THAT ARE SPECIFIED BY THE USER (OPTIONAL)
+################################################## REGIONS THAT ARE SPECIFIED BY THE USER AS BED FILE (OPTIONAL)
 if [ ! -z $VCF ];then
   REGION_SELECTION_BAM_OUTPUT=$BAM
   echo "### vcf (-v) already provided. Skipping selection and sv calling"
-elif [ -z $SELECTION ];then
+elif [ -z $REGIONS ];then
   REGION_SELECTION_BAM_OUTPUT=$BAM
   echo "### No selection parameter (-s) provided. Using all mapped reads"
 else
   echo -e "`date` \t Selecting regions to check for fusion genes..."
   python $REGION_SELECTION_SCRIPT \
-  -b $REGION_SELECTION_BED_OUTPUT \
-  -r $SELECTION
+                          -a $BAM \
+                          -b $REGIONS \
+                          -o /tmp/regions.bam
 
   if ! [ $? -eq 0 ]; then
     echo "!!! REGION SELECTION NOT CORRECTLY COMPLETED... exiting"
     exit 1
   fi
 
-  REGION_SELECTION_SAM_OUTPUT=${REGION_SELECTION_BAM_OUTPUT/.bam/.sam}
-  $SAMTOOLS view -H $BAM > $REGION_SELECTION_SAM_OUTPUT
-  $SAMTOOLS view -@ $THREADS -L $REGION_SELECTION_BED_OUTPUT $BAM | cut -f 1 | sort -k1n | uniq > reads.tmp
-  $SAMTOOLS view  -@ $THREADS $BAM | grep -f reads.tmp >> $REGION_SELECTION_SAM_OUTPUT
-  $SAMTOOLS view  -@ $THREADS -h -S -f bam $REGION_SELECTION_SAM_OUTPUT | $SAMTOOLS sort -o $REGION_SELECTION_BAM_OUTPUT /dev/stdin
+  $SAMTOOLS sort -o $REGION_SELECTION_BAM_OUTPUT /tmp/regions.bam
   $SAMTOOLS index $REGION_SELECTION_BAM_OUTPUT
-  rm reads.tmp
-  rm $REGION_SELECTION_SAM_OUTPUT
 fi
 
 ################################################## CALLING OF SVS ON GIVEN BAM FILE (OPTIONAL)
