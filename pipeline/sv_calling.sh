@@ -110,7 +110,7 @@ if [[ $SV_CALLER == *"nanosv"* ]] || [[ $SV_CALLER == *"NanoSV"* ]]; then
 fi
 
 if [[ $SV_CALLER == *"sniffles"* ]] || [[ $SV_CALLER == *"Sniffles"* ]]; then
-  $SV_CALLER  \
+  echo $SV_CALLER  \
   -v $OUTPUT \
   -m $BAM \
   -t $THREADS \
