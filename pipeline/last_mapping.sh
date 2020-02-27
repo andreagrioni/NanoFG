@@ -95,6 +95,8 @@ if [ -z $LAST_SETTINGS_OVERRIDE ];then
   LAST_SETTINGS=$(echo $LAST_SETTINGS | sed -e "s/-p [^ ]\+/-p ${LAST_PARAMS}/")
 fi
 
+echo $LAST_COMMAND
+
 LAST_COMMAND="${LASTAL} ${LAST_SETTINGS} ${REF} ${PREFIX}.fa | ${LAST_SPLIT} | python ${MAF_CONVERT} -f ${REF_DICT} sam /dev/stdin | ${SAMTOOLS} view /dev/stdin -b | \
 ${SAMTOOLS} sort /dev/stdin -o ${PREFIX}.last.sorted.bam"
 SAMTOOLS_INDEX_COMMAND="${SAMTOOLS} index ${PREFIX}.last.sorted.bam"
