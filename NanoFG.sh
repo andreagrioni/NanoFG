@@ -78,12 +78,12 @@ FILES_DIR=$NANOFG_DIR/files
 SCRIPT_DIR=$NANOFG_DIR/scripts
 #VENV=${NANOFG_DIR}/venv/bin/activate
 
-THREADS=1
+THREADS=7
 
 COMPLEX_FUSION=false
 CONSENSUS_CALLING=false
 DONT_CLEAN=false
-DONT_FILTER=false
+DONT_FILTER=true
 
 OUTPUTDIR=$(realpath ./)
 
@@ -121,7 +121,7 @@ CONSENSUS_CALLING_WTDBG2_SETTINGS='-x ont -g 3g -q'
 MINIMAP2_SETTINGS='-x map-ont -a --MD'
 
 LAST_MAPPING_SETTINGS="-Q 0 -p ${PATH_LAST_PARMS}"
-LAST_MAPPING_THREADS=1
+LAST_MAPPING_THREADS=7
 
 #PRIMER DESIGN DEFAULTS
 PRIMER_DESIGN_GETSEQ_SCRIPT=$SCRIPT_DIR/PrimerFlankDesign.py
@@ -448,6 +448,7 @@ if [ -z $VCF ]; then
     fi
 fi
 
+exit 0
 ################################################## REMOVAL OF INSERTIONS (ALWAYS) AND SVS WITHOUT THE PASS FILTER (OPTIONAL)
 
 VCF_FILTERED=${OUTPUTDIR}/$(basename $VCF)
@@ -471,6 +472,7 @@ python $FUSION_READ_EXTRACTION_SCRIPT \
   -b $BAM \
   -v $VCF_FILTERED \
   -o $CANDIDATE_DIR
+
 
 if ! [ $? -eq 0 ]; then
   echo "!!! FUSION READ EXTRACTION NOT CORRECTLY COMPLETED... exiting"
@@ -663,17 +665,17 @@ echo -e "`date` \t skip Designing primers around fusion breakpoints..."
 
 ################################################### IF -DC IS NOT SPECIFIED, ALL FILES EXCEPT THE OUTPUT FILES ARE DELETED TO PROVIDE A CLEAN OUTPUT
 
-if [ $DONT_CLEAN = false ];then
-  rm $VCF_FILTERED
-  rm $CANDIDATE_DIR/*
-  rmdir $CANDIDATE_DIR
-  rm $BAM_MERGE_OUT
-  rm $BAM_MERGE_OUT.bai
-  rm $SV_CALLING_OUT
-  rm $SV_CALLING_OUT_FILTERED
-#  rm $PRIMER_DIR/*
-#  rmdir $PRIMER_DIR
-fi
+# if [ $DONT_CLEAN = false ];then
+#   rm $VCF_FILTERED
+#   rm $CANDIDATE_DIR/*
+#   rmdir $CANDIDATE_DIR
+#   rm $BAM_MERGE_OUT
+#   rm $BAM_MERGE_OUT.bai
+#   rm $SV_CALLING_OUT
+#   rm $SV_CALLING_OUT_FILTERED
+# #  rm $PRIMER_DIR/*
+# #  rmdir $PRIMER_DIR
+# fi
 
 #deactivate
 echo -e "`date` \t Done"
